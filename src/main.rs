@@ -1,3 +1,5 @@
+
+const ANTIGRAVITY_SVG: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94 20.59c1.09.82 2.73.27 1.23-1.23C16.67 15 17.62 3 12.03 3S7.39 15 2.89 19.36c-1.64 1.64.14 2.05 1.23 1.23c4.23-2.86 3.95-7.91 7.91-7.91s3.68 5.05 7.91 7.91"/></svg>"#;
 mod session;
 
 use gpui_kit::component::button::*;
@@ -599,7 +601,7 @@ impl Render for AntiCliApp {
             .flex()
             .flex_col()
             // ─────────────────────────────────────────────────────────────
-            // 1. Claude Code Top Header Bar (Draggable)
+            // 1. Antigravity Top Header Bar (Draggable)
             // ─────────────────────────────────────────────────────────────
             .child(
                 div()
@@ -613,62 +615,35 @@ impl Render for AntiCliApp {
                     .flex()
                     .items_center()
                     .justify_between()
-                    // Left Brand & Git & Workspace Info
+                    // Left Brand: Antigravity Icon & Name
                     .child(
                         div()
                             .flex()
                             .items_center()
-                            .gap_3()
-                            // Claude Terracotta Star Badge
+                            .gap_2p5()
                             .child(
                                 div()
-                                    .w(px(24.0))
-                                    .h(px(24.0))
+                                    .w(px(26.0))
+                                    .h(px(26.0))
                                     .rounded_md()
                                     .bg(rgb(p.claude))
                                     .text_color(rgb(0xFFFFFF))
                                     .flex()
                                     .items_center()
                                     .justify_center()
-                                    .text_xs()
-                                    .font_weight(FontWeight::BOLD)
-                                    .child("✦"),
+                                    .child(
+                                        svg()
+                                            .data(ANTIGRAVITY_SVG)
+                                            .w(px(16.0))
+                                            .h(px(16.0)),
+                                    ),
                             )
-                            // App Title
                             .child(
                                 div()
                                     .text_sm()
                                     .font_weight(FontWeight::BOLD)
                                     .text_color(rgb(p.text))
-                                    .child("Claude Code"),
-                            )
-                            .child(
-                                div()
-                                    .px_1p5()
-                                    .py(px(1.0))
-                                    .rounded_sm()
-                                    .bg(rgb(p.card))
-                                    .text_xs()
-                                    .text_color(rgb(p.muted))
-                                    .child("Antigravity Engine"),
-                            )
-                            // Git Branch Badge
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py(px(1.0))
-                                    .rounded_sm()
-                                    .bg(rgba(p.green_alpha(0x22)))
-                                    .text_xs()
-                                    .text_color(rgb(p.green))
-                                    .child(" main"),
-                            )
-                            // Current Workspace path
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(rgb(p.muted))
-                                    .child("/mnt/mydata/Antigravity"),
+                                    .child("Antigravity"),
                             ),
                     )
                     // Center Draggable Window Area
@@ -676,58 +651,17 @@ impl Render for AntiCliApp {
                         div()
                             .flex_1()
                             .h_full()
-                            .flex()
-                            .items_center()
-                            .justify_center()
                             .cursor(CursorStyle::OpenHand)
                             .on_mouse_down(MouseButton::Left, |_, window, _| {
                                 window.start_window_move();
-                            })
-                            .child(
-                                div()
-                                    .text_xs()
-                                    .text_color(rgb(p.muted))
-                                    .child("按住此处拖拽窗口"),
-                            ),
+                            }),
                     )
-                    // Right Window Controls & Quick Actions
+                    // Right Window Controls: Zoom (Maximize) & Close
                     .child(
                         div()
                             .flex()
                             .items_center()
-                            .gap_2()
-                            // Quick Model Badge Button
-                            .child(
-                                Button::new("btn_header_model")
-                                    .ghost()
-                                    .with_size(ComponentSize::Small)
-                                    .label(format!("🤖 {} ▾", self.selected_model))
-                                    .on_click(cx.listener(|this, _, _, cx| {
-                                        this.show_model_menu = !this.show_model_menu;
-                                        cx.notify();
-                                    })),
-                            )
-                            // Quick Theme Switch Button (🌙 Dark / ☀️ Light)
-                            .child(
-                                Button::new("btn_header_theme")
-                                    .ghost()
-                                    .with_size(ComponentSize::Small)
-                                    .label(if is_dark_mode { "🌙 暗色" } else { "☀️ 浅色" })
-                                    .on_click(cx.listener(|this, _, _, cx| {
-                                        this.toggle_theme(cx);
-                                    })),
-                            )
-                            // Font Family Badge
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py(px(2.0))
-                                    .rounded_md()
-                                    .bg(rgb(p.card))
-                                    .text_color(rgb(p.muted))
-                                    .text_xs()
-                                    .child(format!("🔤 {}", self.system_font)),
-                            )
+                            .gap_1()
                             // Window Maximize
                             .child(
                                 Button::new("btn_zoom")
