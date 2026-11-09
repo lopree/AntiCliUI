@@ -1552,6 +1552,7 @@ impl Render for AntiCliApp {
                             // ─────────────────────────────────────────────────
                             // 【右侧下方】：固定对话框 + Tokens + 配额用量 + 模型切换 (flex_shrink_0)
                             // ─────────────────────────────────────────────────
+                            // Fixed Chat & Quota Bar Area (Reduced Width & Bottom-Left Text Layout)
                             .child(
                                 div()
                                     .flex_shrink_0()
@@ -1560,167 +1561,115 @@ impl Render for AntiCliApp {
                                     .border_t_1()
                                     .border_color(rgb(p.border))
                                     .flex()
-                                    .flex_col()
-                                    .gap_3()
-                                    // 1. 固定的对话框 (Fixed Chat Box)
+                                    .justify_center()
                                     .child(
                                         div()
-                                            .rounded_lg()
-                                            .bg(rgb(p.card))
-                                            .border_1()
-                                            .border_color(rgb(p.claude))
-                                            .p_3()
+                                            .w_full()
+                                            .max_w(px(740.0))
                                             .flex()
                                             .flex_col()
                                             .gap_2()
+                                            // 1. 固定的对话框 (Fixed Chat Box)
                                             .child(
                                                 div()
+                                                    .rounded_lg()
+                                                    .bg(rgb(p.card))
+                                                    .border_1()
+                                                    .border_color(rgb(p.claude))
+                                                    .p_3()
                                                     .flex()
-                                                    .items_center()
-                                                    .justify_between()
+                                                    .flex_col()
+                                                    .gap_2()
                                                     .child(
                                                         div()
                                                             .flex()
                                                             .items_center()
-                                                            .gap_2()
+                                                            .justify_between()
                                                             .child(
                                                                 div()
                                                                     .text_xs()
                                                                     .font_weight(FontWeight::BOLD)
                                                                     .text_color(rgb(p.claude))
                                                                     .child("╭─ ✦ agy 对话输入框 (Prompt) > "),
-                                                            ),
-                                                    )
-                                                    .child(
-                                                        div()
-                                                            .flex()
-                                                            .items_center()
-                                                            .gap_2()
-                                                            .child(
-                                                                div()
-                                                                    .text_xs()
-                                                                    .text_color(rgb(p.muted))
-                                                                    .child("Enter ↵ 提交 · Shift+Enter 换行"),
                                                             )
                                                             .child(
-                                                                Button::new("btn_send_prompt")
-                                                                    .primary()
-                                                                    .with_size(ComponentSize::XSmall)
-                                                                    .label(if self.is_generating { "⠋ 思考中..." } else { "发送 ↵" })
-                                                                    .on_click(cx.listener(|this, _, window, cx| {
-                                                                        this.submit_prompt(window, cx);
-                                                                    })),
+                                                                div()
+                                                                    .flex()
+                                                                    .items_center()
+                                                                    .gap_2()
+                                                                    .child(
+                                                                        div()
+                                                                            .text_xs()
+                                                                            .text_color(rgb(p.muted))
+                                                                            .child("Enter ↵ 提交 · Shift+Enter 换行"),
+                                                                    )
+                                                                    .child(
+                                                                        Button::new("btn_send_prompt")
+                                                                            .primary()
+                                                                            .with_size(ComponentSize::XSmall)
+                                                                            .label(if self.is_generating { "⠋ 思考中..." } else { "发送 ↵" })
+                                                                            .on_click(cx.listener(|this, _, window, cx| {
+                                                                                this.submit_prompt(window, cx);
+                                                                            })),
+                                                                    ),
                                                             ),
-                                                    ),
+                                                    )
+                                                    .child(Input::new(&self.prompt_input).with_size(ComponentSize::Small)),
                                             )
-                                            .child(Input::new(&self.prompt_input).with_size(ComponentSize::Small)),
-                                    )
-                                    // 2. 对话框下方状态信息条：Tokens、5小时剩余、每周剩余用量、当前模型（高亮可点）
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .justify_between()
-                                            .text_xs()
-                                            // Left: Tokens + 5小时用量 + 每周用量
+                                            // 2. 对话栏左下角单行纯文字状态信息 (Tokens、5小时剩余、周剩余)
                                             .child(
                                                 div()
                                                     .flex()
                                                     .items_center()
-                                                    .gap_2()
-                                                    // Tokens Badge
+                                                    .justify_between()
+                                                    .px_1()
+                                                    .text_xs()
                                                     .child(
                                                         div()
                                                             .flex()
                                                             .items_center()
-                                                            .gap_1p5()
-                                                            .px_2p5()
-                                                            .py(px(3.0))
-                                                            .rounded_md()
-                                                            .bg(rgb(p.card))
-                                                            .border_1()
-                                                            .border_color(rgb(p.border))
+                                                            .gap_2p5()
+                                                            .text_color(rgb(p.muted))
                                                             .child(
                                                                 div()
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .text_color(rgb(p.muted))
-                                                                    .child("Tokens:"),
+                                                                    .child(format!("Tokens: {:.1}k ({:.1}%)", context_k, used_pct)),
                                                             )
+                                                            .child("·")
                                                             .child(
                                                                 div()
-                                                                    .text_color(rgb(p.text))
-                                                                    .child(format!("{:.1}k ({:.1}%)", context_k, used_pct)),
-                                                            ),
-                                                    )
-                                                    // 5小时剩余用量 Badge
-                                                    .child(
-                                                        div()
-                                                            .flex()
-                                                            .items_center()
-                                                            .gap_1p5()
-                                                            .px_2p5()
-                                                            .py(px(3.0))
-                                                            .rounded_md()
-                                                            .bg(rgb(p.card))
-                                                            .border_1()
-                                                            .border_color(rgb(p.border))
-                                                            .child(
-                                                                div()
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .text_color(rgb(p.muted))
-                                                                    .child("5小时剩余:"),
-                                                            )
-                                                            .child(
-                                                                div()
-                                                                    .text_color(rgb(p.green))
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .child(format!("{:.1}%", five_h_pct)),
-                                                            )
-                                                            .child(
-                                                                div()
-                                                                    .text_color(rgb(p.muted))
+                                                                    .flex()
+                                                                    .items_center()
+                                                                    .gap_1()
+                                                                    .child("5小时剩余:")
+                                                                    .child(
+                                                                        div()
+                                                                            .text_color(rgb(p.green))
+                                                                            .font_weight(FontWeight::BOLD)
+                                                                            .child(format!("{:.1}%", five_h_pct)),
+                                                                    )
                                                                     .child(format!("({})", five_h_reset)),
-                                                            ),
-                                                    )
-                                                    // 每周剩余用量 Badge
-                                                    .child(
-                                                        div()
-                                                            .flex()
-                                                            .items_center()
-                                                            .gap_1p5()
-                                                            .px_2p5()
-                                                            .py(px(3.0))
-                                                            .rounded_md()
-                                                            .bg(rgb(p.card))
-                                                            .border_1()
-                                                            .border_color(rgb(p.border))
-                                                            .child(
-                                                                div()
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .text_color(rgb(p.muted))
-                                                                    .child("每周剩余:"),
                                                             )
+                                                            .child("·")
                                                             .child(
                                                                 div()
-                                                                    .text_color(rgb(p.green))
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .child(format!("{:.1}%", weekly_pct)),
-                                                            )
-                                                            .child(
-                                                                div()
-                                                                    .text_color(rgb(p.muted))
+                                                                    .flex()
+                                                                    .items_center()
+                                                                    .gap_1()
+                                                                    .child("周剩余:")
+                                                                    .child(
+                                                                        div()
+                                                                            .text_color(rgb(p.green))
+                                                                            .font_weight(FontWeight::BOLD)
+                                                                            .child(format!("{:.1}%", weekly_pct)),
+                                                                    )
                                                                     .child(format!("({})", weekly_reset)),
                                                             ),
-                                                    ),
-                                            )
-                                            // Right: 高亮显眼的模型切换按钮（点击呼出浮动切换选项面板）
-                                            .child(
-                                                div()
+                                                    )
                                                     .child(
                                                         Button::new("btn_bottom_model_selector")
-                                                            .primary()
-                                                            .with_size(ComponentSize::Small)
-                                                            .label(format!("✦ 切换模型: {} ▾", self.selected_model))
+                                                            .ghost()
+                                                            .with_size(ComponentSize::XSmall)
+                                                            .label(format!("🤖 {} ▾", self.selected_model))
                                                             .on_click(cx.listener(|this, _, _, cx| {
                                                                 this.show_model_menu = !this.show_model_menu;
                                                                 cx.notify();
