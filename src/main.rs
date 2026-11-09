@@ -577,13 +577,11 @@ impl Render for AntiCliApp {
         let weekly_reset = self.quota.weekly_reset.clone();
         let cur_font_size = self.chat_font_size;
 
-        // Outer Container: Frameless Window with true rounded corners & system font
+        // Outer Container: Standard rectangular desktop window & system font
         div()
             .id("claude_code_app")
             .font_family(self.system_font.clone())
             .size_full()
-            .rounded_2xl()
-            .overflow_hidden()
             .border_1()
             .border_color(rgb(p.border))
             .bg(rgb(p.bg))
@@ -1168,7 +1166,6 @@ impl Render for AntiCliApp {
                                                                 .child(
                                                                     div()
                                                                         .id(format!("bubble_user_{}", idx))
-                                                                        .w_full()
                                                                         .text_size(px(cur_font_size))
                                                                         .px_4()
                                                                         .py_3()
@@ -1224,7 +1221,7 @@ impl Render for AntiCliApp {
                                                                             let copy_text = entry.content.clone();
                                                                             Button::new(format!("btn_copy_user_{}", idx))
                                                                                 .ghost()
-                                                                                .with_size(ComponentSize::XSmall)
+                                                                                .with_size(ComponentSize::Small)
                                                                                 .icon(IconName::Copy)
                                                                                 .tooltip("复制内容")
                                                                                 .on_click(cx.listener(move |this, _, _, cx| {
@@ -1532,7 +1529,7 @@ impl Render for AntiCliApp {
                                                                                     let copy_text = entry.content.clone();
                                                                                     Button::new(format!("btn_copy_asst_{}", idx))
                                                                                         .ghost()
-                                                                                        .with_size(ComponentSize::XSmall)
+                                                                                        .with_size(ComponentSize::Small)
                                                                                         .icon(IconName::Copy)
                                                                                         .tooltip("复制内容")
                                                                                         .on_click(cx.listener(move |this, _, _, cx| {
@@ -2393,34 +2390,36 @@ impl Render for AntiCliApp {
 }
 
 fn main() {
-    gpui_kit::application().run(move |cx| {
-        gpui_kit::init(cx);
+    gpui_kit::application()
+        .with_assets(gpui_kit::assets::AllAssets)
+        .run(move |cx| {
+            gpui_kit::init(cx);
 
-        // Load saved theme preference on start with system font
-        let is_dark = session::load_theme_preference();
-        let sys_font = detect_system_font();
-        Theme::change(if is_dark { ThemeMode::Dark } else { ThemeMode::Light }, None, cx);
-        Theme::update(cx, |theme| {
-            theme.font_family = sys_font.clone().into();
-            theme.mono_font_family = sys_font.into();
+            // Load saved theme preference on start with system font
+            let is_dark = session::load_theme_preference();
+            let sys_font = detect_system_font();
+            Theme::change(if is_dark { ThemeMode::Dark } else { ThemeMode::Light }, None, cx);
+            Theme::update(cx, |theme| {
+                theme.font_family = sys_font.clone().into();
+                theme.mono_font_family = sys_font.into();
+            });
+
+            // Window options: Modern desktop window with standard rectangular appearance
+            let window_options = WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                    None,
+                    size(px(1240.0), px(820.0)),
+                    cx,
+                ))),
+                titlebar: None,
+                window_decorations: Some(WindowDecorations::Client),
+                window_background: WindowBackgroundAppearance::Opaque,
+                ..Default::default()
+            };
+
+            gpui_kit::open_window(window_options, cx, |window, cx| {
+                cx.new(|cx| AntiCliApp::new(window, cx))
+            })
+            .expect("Failed to open Claude Code window");
         });
-
-        // Window options: Frameless client decorations, modern 1240x820 size, transparent background for true rounded corners
-        let window_options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                None,
-                size(px(1240.0), px(820.0)),
-                cx,
-            ))),
-            titlebar: None,
-            window_decorations: Some(WindowDecorations::Client),
-            window_background: WindowBackgroundAppearance::Transparent,
-            ..Default::default()
-        };
-
-        gpui_kit::open_window(window_options, cx, |window, cx| {
-            cx.new(|cx| AntiCliApp::new(window, cx))
-        })
-        .expect("Failed to open Claude Code frameless window");
-    });
 }
