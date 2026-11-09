@@ -14,7 +14,39 @@ use session::{
     TranscriptEntry, TranscriptType,
 };
 
-const FONT_NAME: &str = "霞鹜文楷等宽";
+pub fn detect_system_font() -> String {
+    // 1. Try KDE 6
+    if let Ok(output) = std::process::Command::new("kreadconfig6")
+        .args(&["--group", "General", "--key", "font"])
+        .output()
+    {
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout);
+            if let Some(font_name) = s.split(',').next() {
+                let trimmed = font_name.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.to_string();
+                }
+            }
+        }
+    }
+    // 2. Try KDE 5
+    if let Ok(output) = std::process::Command::new("kreadconfig5")
+        .args(&["--group", "General", "--key", "font"])
+        .output()
+    {
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout);
+            if let Some(font_name) = s.split(',').next() {
+                let trimmed = font_name.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.to_string();
+                }
+            }
+        }
+    }
+    "霞鹜文楷等宽".to_string()
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct ThemePalette {
@@ -172,10 +204,12 @@ pub struct AntiCliApp {
     // In-app Direct Generation State
     is_generating: bool,
     chat_font_size: f32,
+    system_font: String,
 }
 
 impl AntiCliApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let system_font = detect_system_font();
         let search_input = cx.new(|cx| {
             InputState::new(window, cx).placeholder("搜索会话 (按关键词或 UUID)...")
         });
@@ -216,6 +250,7 @@ impl AntiCliApp {
             is_dark,
             is_generating: false,
             chat_font_size: load_chat_font_size(),
+            system_font,
         };
 
         // Load sessions
@@ -299,7 +334,12 @@ impl AntiCliApp {
         } else {
             ThemeMode::Light
         };
+        let font_fam = self.system_font.clone();
         Theme::change(mode, None, cx);
+        Theme::update(cx, |theme| {
+            theme.font_family = font_fam.clone().into();
+            theme.mono_font_family = font_fam.into();
+        });
         self.status_msg = Some(format!(
             "✓ 主题已保存: {}",
             if self.is_dark { "Claude Dark (暗夜黑)" } else { "Claude Light (白昼暖白)" }
@@ -537,10 +577,10 @@ impl Render for AntiCliApp {
         let weekly_reset = self.quota.weekly_reset.clone();
         let cur_font_size = self.chat_font_size;
 
-        // Outer Container: Frameless Window with true rounded corners & custom font
+        // Outer Container: Frameless Window with true rounded corners & system font
         div()
             .id("claude_code_app")
-            .font_family(FONT_NAME)
+            .font_family(self.system_font.clone())
             .size_full()
             .rounded_2xl()
             .overflow_hidden()
@@ -688,7 +728,7 @@ impl Render for AntiCliApp {
                                     .bg(rgb(p.card))
                                     .text_color(rgb(p.muted))
                                     .text_xs()
-                                    .child(format!("🔤 {}", FONT_NAME)),
+                                    .child(format!("🔤 {}", self.system_font)),
                             )
                             // Window Maximize
                             .child(
@@ -1119,58 +1159,67 @@ impl Render for AntiCliApp {
                                                         .justify_end()
                                                         .child(
                                                             div()
-                                                                .id(format!("bubble_user_{}", idx))
                                                                 .max_w(relative(0.48))
                                                                 .min_w_0()
-                                                                .text_size(px(cur_font_size))
-                                                                .px_4()
-                                                                .py_3()
-                                                                .rounded_2xl()
-                                                                .rounded_br_sm()
-                                                                .bg(if is_dark_mode {
-                                                                    rgba(p.claude_alpha(0x2C))
-                                                                } else {
-                                                                    rgba(p.claude_alpha(0x18))
-                                                                })
-                                                                .border_1()
-                                                                .border_color(rgba(p.claude_alpha(0x55)))
-                                                                .shadow_sm()
                                                                 .flex()
                                                                 .flex_col()
-                                                                .gap_1p5()
+                                                                .items_end()
+                                                                .gap_1()
                                                                 .child(
                                                                     div()
+                                                                        .id(format!("bubble_user_{}", idx))
+                                                                        .w_full()
+                                                                        .text_size(px(cur_font_size))
+                                                                        .px_4()
+                                                                        .py_3()
+                                                                        .rounded_2xl()
+                                                                        .rounded_br_sm()
+                                                                        .bg(if is_dark_mode {
+                                                                            rgba(p.claude_alpha(0x2C))
+                                                                        } else {
+                                                                            rgba(p.claude_alpha(0x18))
+                                                                        })
+                                                                        .border_1()
+                                                                        .border_color(rgba(p.claude_alpha(0x55)))
+                                                                        .shadow_sm()
                                                                         .flex()
-                                                                        .items_center()
-                                                                        .justify_between()
-                                                                        .gap_4()
+                                                                        .flex_col()
+                                                                        .gap_1p5()
                                                                         .child(
                                                                             div()
-                                                                                .text_xs()
-                                                                                .font_weight(FontWeight::BOLD)
-                                                                                .text_color(rgb(p.claude))
-                                                                                .child(format!("👤 {}", self.username)),
+                                                                                .flex()
+                                                                                .items_center()
+                                                                                .gap_2()
+                                                                                .pb_1p5()
+                                                                                .border_b_1()
+                                                                                .border_color(rgba(p.muted_alpha(0x1F)))
+                                                                                .child(
+                                                                                    div()
+                                                                                        .text_xs()
+                                                                                        .font_weight(FontWeight::BOLD)
+                                                                                        .text_color(rgb(p.claude))
+                                                                                        .child(format!("👤 {}", self.username)),
+                                                                                )
+                                                                                .child(
+                                                                                    div()
+                                                                                        .text_xs()
+                                                                                        .text_color(rgb(p.muted))
+                                                                                        .child(format!("· {}", time_str)),
+                                                                                ),
                                                                         )
                                                                         .child(
-                                                                            div()
-                                                                                .text_xs()
-                                                                                .text_color(rgb(p.muted))
-                                                                                .child(time_str),
+                                                                            TextView::markdown(
+                                                                                format!("user_md_{}", idx),
+                                                                                entry.content.clone(),
+                                                                            )
+                                                                            .selectable(true),
                                                                         ),
                                                                 )
                                                                 .child(
-                                                                    TextView::markdown(
-                                                                        format!("user_md_{}", idx),
-                                                                        entry.content.clone(),
-                                                                    )
-                                                                    .selectable(true),
-                                                                )
-                                                                .child(
                                                                     div()
                                                                         .flex()
-                                                                        .items_center()
                                                                         .justify_end()
-                                                                        .pt(px(1.0))
+                                                                        .pr_1()
                                                                         .child({
                                                                             let copy_text = entry.content.clone();
                                                                             Button::new(format!("btn_copy_user_{}", idx))
@@ -1411,82 +1460,89 @@ impl Render for AntiCliApp {
                                                                 )
                                                                 .child(
                                                                     div()
-                                                                        .id(format!("bubble_asst_{}", idx))
                                                                         .flex_1()
                                                                         .min_w_0()
-                                                                        .text_size(px(cur_font_size))
-                                                                        .px_4()
-                                                                        .py_3()
-                                                                        .rounded_2xl()
-                                                                        .rounded_tl_sm()
-                                                                        .bg(rgb(p.card))
-                                                                        .border_1()
-                                                                        .border_color(rgb(p.border))
-                                                                        .shadow_sm()
                                                                         .flex()
                                                                         .flex_col()
-                                                                        .gap_2()
-                                                                .child(
-                                                                    div()
-                                                                        .flex()
-                                                                        .items_center()
-                                                                        .gap_2()
-                                                                        .pb_1p5()
-                                                                        .border_b_1()
-                                                                        .border_color(rgba(p.muted_alpha(0x1F)))
+                                                                        .items_end()
+                                                                        .gap_1()
                                                                         .child(
                                                                             div()
-                                                                                .text_xs()
-                                                                                .font_weight(FontWeight::BOLD)
-                                                                                .text_color(rgb(p.claude))
-                                                                                .child("✦ Claude Code"),
+                                                                                .id(format!("bubble_asst_{}", idx))
+                                                                                .w_full()
+                                                                                .text_size(px(cur_font_size))
+                                                                                .px_4()
+                                                                                .py_3()
+                                                                                .rounded_2xl()
+                                                                                .rounded_tl_sm()
+                                                                                .bg(rgb(p.card))
+                                                                                .border_1()
+                                                                                .border_color(rgb(p.border))
+                                                                                .shadow_sm()
+                                                                                .flex()
+                                                                                .flex_col()
+                                                                                .gap_2()
+                                                                                .child(
+                                                                                    div()
+                                                                                        .flex()
+                                                                                        .items_center()
+                                                                                        .gap_2()
+                                                                                        .pb_1p5()
+                                                                                        .border_b_1()
+                                                                                        .border_color(rgba(p.muted_alpha(0x1F)))
+                                                                                        .child(
+                                                                                            div()
+                                                                                                .text_xs()
+                                                                                                .font_weight(FontWeight::BOLD)
+                                                                                                .text_color(rgb(p.claude))
+                                                                                                .child("✦ Claude Code"),
+                                                                                        )
+                                                                                        .child(
+                                                                                            div()
+                                                                                                .px_1p5()
+                                                                                                .py(px(0.5))
+                                                                                                .rounded_sm()
+                                                                                                .bg(rgba(p.claude_alpha(0x22)))
+                                                                                                .text_xs()
+                                                                                                .font_weight(FontWeight::BOLD)
+                                                                                                .text_color(rgb(p.claude))
+                                                                                                .child("BOT"),
+                                                                                        )
+                                                                                        .child(
+                                                                                            div()
+                                                                                                .text_xs()
+                                                                                                .text_color(rgb(p.muted))
+                                                                                                .child(format!("· {}", time_str)),
+                                                                                        ),
+                                                                                )
+                                                                                .child(
+                                                                                    TextView::markdown(
+                                                                                        format!("asst_md_{}", idx),
+                                                                                        entry.content.clone(),
+                                                                                    )
+                                                                                    .selectable(true),
+                                                                                ),
                                                                         )
                                                                         .child(
                                                                             div()
-                                                                                .px_1p5()
-                                                                                .py(px(0.5))
-                                                                                .rounded_sm()
-                                                                                .bg(rgba(p.claude_alpha(0x22)))
-                                                                                .text_xs()
-                                                                                .font_weight(FontWeight::BOLD)
-                                                                                .text_color(rgb(p.claude))
-                                                                                .child("BOT"),
-                                                                        )
-                                                                        .child(
-                                                                            div()
-                                                                                .text_xs()
-                                                                                .text_color(rgb(p.muted))
-                                                                                .child(format!("· {}", time_str)),
+                                                                                .flex()
+                                                                                .justify_end()
+                                                                                .pr_1()
+                                                                                .child({
+                                                                                    let copy_text = entry.content.clone();
+                                                                                    Button::new(format!("btn_copy_asst_{}", idx))
+                                                                                        .ghost()
+                                                                                        .with_size(ComponentSize::XSmall)
+                                                                                        .icon(IconName::Copy)
+                                                                                        .tooltip("复制内容")
+                                                                                        .on_click(cx.listener(move |this, _, _, cx| {
+                                                                                            cx.write_to_clipboard(ClipboardItem::new_string(copy_text.clone()));
+                                                                                            this.status_msg = Some("✓ 回复已复制到剪贴板".to_string());
+                                                                                            cx.notify();
+                                                                                        }))
+                                                                                }),
                                                                         ),
-                                                                )
-                                                                .child(
-                                                                    TextView::markdown(
-                                                                        format!("asst_md_{}", idx),
-                                                                        entry.content.clone(),
-                                                                    )
-                                                                    .selectable(true),
-                                                                )
-                                                                .child(
-                                                                    div()
-                                                                        .flex()
-                                                                        .items_center()
-                                                                        .justify_end()
-                                                                        .pt(px(1.0))
-                                                                        .child({
-                                                                            let copy_text = entry.content.clone();
-                                                                            Button::new(format!("btn_copy_asst_{}", idx))
-                                                                                .ghost()
-                                                                                .with_size(ComponentSize::XSmall)
-                                                                                .icon(IconName::Copy)
-                                                                                .tooltip("复制内容")
-                                                                                .on_click(cx.listener(move |this, _, _, cx| {
-                                                                                    cx.write_to_clipboard(ClipboardItem::new_string(copy_text.clone()));
-                                                                                    this.status_msg = Some("✓ 回复已复制到剪贴板".to_string());
-                                                                                    cx.notify();
-                                                                                }))
-                                                                        }),
                                                                 ),
-                                                        ),
                                                         )
                                                         .into_any_element()
                                                 }
@@ -1741,44 +1797,6 @@ impl Render for AntiCliApp {
                                                     ),
                                             ),
                                     ),
-                            ),
-                    ),
-            )
-            // ─────────────────────────────────────────────────────────────
-            // 3. Status Bar Toast / Feedback Message
-            // ─────────────────────────────────────────────────────────────
-            .child(
-                div()
-                    .flex_shrink_0()
-                    .h(px(24.0))
-                    .w_full()
-                    .bg(rgb(p.card))
-                    .border_t_1()
-                    .border_color(rgb(p.border))
-                    .px_4()
-                    .flex()
-                    .items_center()
-                    .justify_between()
-                    .text_xs()
-                    .child(
-                        div()
-                            .text_color(rgb(p.muted))
-                            .child(self.status_msg.clone().unwrap_or_else(|| "就绪".to_string())),
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap_3()
-                            .child(
-                                div()
-                                    .text_color(rgb(p.muted))
-                                    .child("GPUI Kit v0.9.0 · Zed Architecture"),
-                            )
-                            .child(
-                                div()
-                                    .text_color(rgb(p.claude))
-                                    .child(if is_dark_mode { "🌙 暗色模式" } else { "☀️ 白昼模式" }),
                             ),
                     ),
             )
@@ -2164,10 +2182,10 @@ impl Render for AntiCliApp {
                                                                             .child("✦ Claude: 当前字号排版紧凑优雅，多行文本阅读更自然。")
                                                                     )
                                                             ),
-                                                        // 3. 默认中文字体
+                                                        // 3. 默认系统字体
                                                         div().p_3().rounded_lg().bg(rgb(p.card)).border_1().border_color(rgb(p.border)).flex().items_center().justify_between()
-                                                            .child(div().flex().flex_col().gap_0p5().child(div().text_xs().font_weight(FontWeight::BOLD).text_color(rgb(p.text)).child("默认中文字体")).child(div().text_xs().text_color(rgb(p.muted)).child("已绑定您系统安装的霞鹜文楷等宽字体")))
-                                                            .child(div().px_3().py_1().rounded_md().bg(rgba(p.claude_alpha(0x22))).text_xs().text_color(rgb(p.claude)).child("霞鹜文楷等宽")),
+                                                            .child(div().flex().flex_col().gap_0p5().child(div().text_xs().font_weight(FontWeight::BOLD).text_color(rgb(p.text)).child("系统默认字体")).child(div().text_xs().text_color(rgb(p.muted)).child(format!("全界面统一跟随系统字体：{}", self.system_font))))
+                                                            .child(div().px_3().py_1().rounded_md().bg(rgba(p.claude_alpha(0x22))).text_xs().text_color(rgb(p.claude)).child(self.system_font.clone())),
                                                     ],
                                                     // 1: 模型与智能体
                                                     1 => vec![
@@ -2378,9 +2396,14 @@ fn main() {
     gpui_kit::application().run(move |cx| {
         gpui_kit::init(cx);
 
-        // Load saved theme preference on start with LXGW WenKai font
+        // Load saved theme preference on start with system font
         let is_dark = session::load_theme_preference();
+        let sys_font = detect_system_font();
         Theme::change(if is_dark { ThemeMode::Dark } else { ThemeMode::Light }, None, cx);
+        Theme::update(cx, |theme| {
+            theme.font_family = sys_font.clone().into();
+            theme.mono_font_family = sys_font.into();
+        });
 
         // Window options: Frameless client decorations, modern 1240x820 size, transparent background for true rounded corners
         let window_options = WindowOptions {
