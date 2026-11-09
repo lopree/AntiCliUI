@@ -571,7 +571,7 @@ impl Render for AntiCliApp {
         let p = if is_dark_mode { PALETTE_DARK } else { PALETTE_LIGHT };
 
         // Quota calculations
-        let context_k = self.quota.context_tokens as f64 / 1000.0;
+        let _context_k = self.quota.context_tokens as f64 / 1000.0;
         let used_pct = self.quota.used_pct;
         let five_h_pct = self.quota.five_hour_pct;
         let five_h_reset = self.quota.five_hour_reset.clone();
@@ -1552,14 +1552,13 @@ impl Render for AntiCliApp {
                             // ─────────────────────────────────────────────────
                             // 【右侧下方】：固定对话框 + Tokens + 配额用量 + 模型切换 (flex_shrink_0)
                             // ─────────────────────────────────────────────────
-                            // Fixed Chat & Quota Bar Area (Reduced Width & Bottom-Left Text Layout)
+                            // Fixed Chat & Quota Bar Area (Transparent Background & Left Text Layout)
                             .child(
                                 div()
                                     .flex_shrink_0()
-                                    .p_4()
-                                    .bg(rgb(p.sidebar))
-                                    .border_t_1()
-                                    .border_color(rgb(p.border))
+                                    .px_6()
+                                    .pb_4()
+                                    .pt_1()
                                     .flex()
                                     .justify_center()
                                     .child(
@@ -1628,41 +1627,49 @@ impl Render for AntiCliApp {
                                                         div()
                                                             .flex()
                                                             .items_center()
-                                                            .gap_2p5()
+                                                            .gap_1p5()
                                                             .text_color(rgb(p.muted))
                                                             .child(
                                                                 div()
-                                                                    .child(format!("Tokens: {:.1}k ({:.1}%)", context_k, used_pct)),
+                                                                    .child(format!("Tokens：{:.1}%", used_pct)),
                                                             )
-                                                            .child("·")
+                                                            .child(
+                                                                div()
+                                                                    .text_color(rgba(p.muted_alpha(0x66)))
+                                                                    .child("|"),
+                                                            )
                                                             .child(
                                                                 div()
                                                                     .flex()
                                                                     .items_center()
-                                                                    .gap_1()
-                                                                    .child("5小时剩余:")
+                                                                    .gap_0p5()
+                                                                    .child("5h余：")
                                                                     .child(
                                                                         div()
                                                                             .text_color(rgb(p.green))
                                                                             .font_weight(FontWeight::BOLD)
                                                                             .child(format!("{:.1}%", five_h_pct)),
                                                                     )
-                                                                    .child(format!("({})", five_h_reset)),
+                                                                    .child(format!("（{}）", five_h_reset)),
                                                             )
-                                                            .child("·")
+                                                            .child(
+                                                                div()
+                                                                    .text_color(rgba(p.muted_alpha(0x66)))
+                                                                    .child("|"),
+                                                            )
                                                             .child(
                                                                 div()
                                                                     .flex()
                                                                     .items_center()
-                                                                    .gap_1()
-                                                                    .child("周剩余:")
+                                                                    .gap_0p5()
+                                                                    .child("周余：")
                                                                     .child(
                                                                         div()
                                                                             .text_color(rgb(p.green))
                                                                             .font_weight(FontWeight::BOLD)
                                                                             .child(format!("{:.1}%", weekly_pct)),
                                                                     )
-                                                                    .child(format!("({})", weekly_reset)),
+                                                                    .child(format!("（{}）", weekly_reset)),
                                                             ),
                                                     )
                                                     .child(
