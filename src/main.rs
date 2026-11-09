@@ -1615,19 +1615,24 @@ impl Render for AntiCliApp {
                                                     .justify_between()
                                                     .px_1()
                                                     .text_xs()
+                                                    .whitespace_nowrap()
                                                     .child(
                                                         div()
                                                             .flex()
                                                             .items_center()
                                                             .gap_1p5()
+                                                            .whitespace_nowrap()
+                                                            .flex_shrink_0()
                                                             .text_color(rgb(p.muted))
                                                             .child(
                                                                 div()
-                                                                    .child(format!("Tokens：{:.1}%", used_pct)),
+                                                                    .whitespace_nowrap()
+                                                                    .child(format!("Tokens: {:.1}%", used_pct)),
                                                             )
                                                             .child(
                                                                 div()
                                                                     .text_color(rgba(p.muted_alpha(0x66)))
+                                                                    .whitespace_nowrap()
                                                                     .child("|"),
                                                             )
                                                             .child(
@@ -1635,18 +1640,30 @@ impl Render for AntiCliApp {
                                                                     .flex()
                                                                     .items_center()
                                                                     .gap_0p5()
-                                                                    .child("5h余：")
+                                                                    .whitespace_nowrap()
+                                                                    .flex_shrink_0()
+                                                                    .child(
+                                                                        div()
+                                                                            .whitespace_nowrap()
+                                                                            .child("5h余: "),
+                                                                    )
                                                                     .child(
                                                                         div()
                                                                             .text_color(rgb(p.green))
                                                                             .font_weight(FontWeight::BOLD)
+                                                                            .whitespace_nowrap()
                                                                             .child(format!("{:.1}%", five_h_pct)),
                                                                     )
-                                                                    .child(format!("（{}）", five_h_reset)),
+                                                                    .child(
+                                                                        div()
+                                                                            .whitespace_nowrap()
+                                                                            .child(format!(" ({})", five_h_reset)),
+                                                                    ),
                                                             )
                                                             .child(
                                                                 div()
                                                                     .text_color(rgba(p.muted_alpha(0x66)))
+                                                                    .whitespace_nowrap()
                                                                     .child("|"),
                                                             )
                                                             .child(
@@ -1654,14 +1671,25 @@ impl Render for AntiCliApp {
                                                                     .flex()
                                                                     .items_center()
                                                                     .gap_0p5()
-                                                                    .child("周余：")
+                                                                    .whitespace_nowrap()
+                                                                    .flex_shrink_0()
+                                                                    .child(
+                                                                        div()
+                                                                            .whitespace_nowrap()
+                                                                            .child("周余: "),
+                                                                    )
                                                                     .child(
                                                                         div()
                                                                             .text_color(rgb(p.green))
                                                                             .font_weight(FontWeight::BOLD)
+                                                                            .whitespace_nowrap()
                                                                             .child(format!("{:.1}%", weekly_pct)),
                                                                     )
-                                                                    .child(format!("（{}）", weekly_reset)),
+                                                                    .child(
+                                                                        div()
+                                                                            .whitespace_nowrap()
+                                                                            .child(format!(" ({})", weekly_reset)),
+                                                                    ),
                                                             ),
                                                     )
                                                     .child(
