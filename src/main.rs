@@ -1568,52 +1568,44 @@ impl Render for AntiCliApp {
                                             .flex()
                                             .flex_col()
                                             .gap_2()
-                                            // 1. 固定的对话框 (Fixed Chat Box)
+                                            // 1. 固定的对话框 (Fixed Chat Box - 完全透明无背景色)
                                             .child(
                                                 div()
-                                                    .rounded_lg()
-                                                    .bg(rgb(p.card))
+                                                    .rounded_xl()
                                                     .border_1()
-                                                    .border_color(rgb(p.claude))
+                                                    .border_color(rgb(p.border))
+                                                    .hover(|s| s.border_color(rgba(p.claude_alpha(0x99))))
                                                     .p_3()
                                                     .flex()
                                                     .flex_col()
                                                     .gap_2()
                                                     .child(
+                                                        Input::new(&self.prompt_input)
+                                                            .appearance(false)
+                                                            .with_size(ComponentSize::Small),
+                                                    )
+                                                    .child(
                                                         div()
                                                             .flex()
                                                             .items_center()
                                                             .justify_between()
+                                                            .pt_1()
                                                             .child(
                                                                 div()
                                                                     .text_xs()
-                                                                    .font_weight(FontWeight::BOLD)
-                                                                    .text_color(rgb(p.claude))
-                                                                    .child("╭─ ✦ agy 对话输入框 (Prompt) > "),
+                                                                    .text_color(rgb(p.muted))
+                                                                    .child("Enter ↵ 提交 · Shift+Enter 换行"),
                                                             )
                                                             .child(
-                                                                div()
-                                                                    .flex()
-                                                                    .items_center()
-                                                                    .gap_2()
-                                                                    .child(
-                                                                        div()
-                                                                            .text_xs()
-                                                                            .text_color(rgb(p.muted))
-                                                                            .child("Enter ↵ 提交 · Shift+Enter 换行"),
-                                                                    )
-                                                                    .child(
-                                                                        Button::new("btn_send_prompt")
-                                                                            .primary()
-                                                                            .with_size(ComponentSize::XSmall)
-                                                                            .label(if self.is_generating { "⠋ 思考中..." } else { "发送 ↵" })
-                                                                            .on_click(cx.listener(|this, _, window, cx| {
-                                                                                this.submit_prompt(window, cx);
-                                                                            })),
-                                                                    ),
+                                                                Button::new("btn_send_prompt")
+                                                                    .primary()
+                                                                    .with_size(ComponentSize::XSmall)
+                                                                    .label(if self.is_generating { "⠋ 思考中..." } else { "发送 ↵" })
+                                                                    .on_click(cx.listener(|this, _, window, cx| {
+                                                                        this.submit_prompt(window, cx);
+                                                                    })),
                                                             ),
-                                                    )
-                                                    .child(Input::new(&self.prompt_input).with_size(ComponentSize::Small)),
+                                                    ),
                                             )
                                             // 2. 对话栏左下角单行纯文字状态信息 (Tokens、5小时剩余、周剩余)
                                             .child(
